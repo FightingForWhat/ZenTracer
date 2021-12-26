@@ -3,6 +3,7 @@
 </p>
 
 ### screenshot
+![](./screenshot01.png)
 ![](./screenshot.png)
 
 ### problem
@@ -17,6 +18,13 @@
 	5. `Export\Import JSON` can save\restore call tree.
 
 ### changelog
+
+
+#### 20211225
+	1. repair some bugs. ex start & stop button
+	2. fix usb and vm connect code, u can use this with usb connections or vm programs.
+	3. some other fixes, if u find more, issue it, here.
+
 #### 20190926
 	1. [untested\imperfect] support multiprocess.
 	2. merge ui code.
