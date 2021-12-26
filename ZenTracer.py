@@ -22,8 +22,9 @@ from PyQt5 import QtCore, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1015, 769)
+        MainWindow.resize(1500, 769)
         MainWindow.setMaximumSize(QtCore.QSize(16777214, 16777215))
+        MainWindow.setGeometry(50, 50, 1500, 769)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -251,7 +252,8 @@ def start_trace(app):
     global device
 
     def _attach(pid):
-        if not device: return
+        if not device:
+            return
         app.log("attach '{}'".format(pid))
         session = device.attach(pid)
         session.enable_child_gating()
@@ -264,15 +266,24 @@ def start_trace(app):
     def _on_child_added(child):
         _attach(child.pid)
 
-    device = frida.get_usb_device()
+    try:
+        device = frida.get_usb_device(1000)
+    except frida.InvalidArgumentError:
+        device = frida.get_remote_device(1000)
+    except Exception as error:
+        print(error)
     match_s = str(app.match_regex_list).replace('u\'', '\'')
     black_s = str(app.black_regex_list).replace('u\'', '\'')
     device.on("child-added", _on_child_added)
-    application = device.get_frontmost_application()
-    target = 'Gadget' if application.identifier == 're.frida.Gadget' else application.identifier
-    for process in device.enumerate_processes():
-        if target in process.name:
-            _attach(process.name)
+    try:
+        application = device.get_frontmost_application()
+        target = 'Gadget' if application.identifier == 're.frida.Gadget' else application.identifier
+        for process in device.enumerate_processes():
+            if target in process.name:
+                _attach(process.name)
+    except Exception as error:
+        app.log(str(error))
+
 
 
 def stop_trace(app):
@@ -295,6 +306,7 @@ class ZenTracerWindow(QMainWindow):
             stop_trace(self.app)
             self.app.ui.actionStart.setText("Start")
         else:
+            # TODO 如果加载scriptsr失败，点击start仍然会变成stop，stop按钮随后失效  尝试联通start_trace中的except
             threading.Thread(target=start_trace, args=(self.app,)).start()
             self.app.ui.actionStart.setText("Stop")
 
@@ -430,7 +442,7 @@ class ZenTracer:
         self.ui.logList.setModel(QStandardItemModel(self.ui.logList))
         self.ui.treeView.setModel(QStandardItemModel(self.ui.treeView))
         self.ui.treeView.model().setHorizontalHeaderLabels(['method', 'args', 'retval'])
-        self.ui.treeView.setColumnWidth(0, 500)
+        self.ui.treeView.setColumnWidth(0, 980)
         self.ui.treeView.setColumnWidth(1, 300)
 
     def method_entry(self, tid, tname, clazz, method, args):
